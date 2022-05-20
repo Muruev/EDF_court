@@ -1,0 +1,38 @@
+<%let action = edit ? "/users/update" : "/users/create" %>
+<form method="post" id ="user_action" class="pt-2" action=<%=action%>>
+    <% if(edit) { %> <input class="form-control" name='_id' hidden> <% } %>
+    <div class="form-group">
+        <input class="form-control" name='name' placeholder="Ф.И.О" required>
+    </div>
+    <div class="form-group">
+        <input class="form-control" name='username' placeholder="Логин" required>
+    </div>
+    <div class="form-group">
+        <input class="form-control" name='password' placeholder="Пароль" required>
+    </div>
+    <div class="form-group">
+        <select class="form-select" name='court' id = 'court-list' required>
+            <option selected disabled value="">Выберите суд</option>
+            <% if (!locals.data) locals.data = {} %>
+            <% if (!locals.data.courts) locals.data.courts = [] %>
+            <% for(let court of data.courts) { %>
+                <option value="<%=court._id%>"><%=court.name%></option>
+            <% } %>
+        </select>
+    </div>
+    <div class="form-group">
+        <select class="form-select" name='role' id = 'role-list' required>
+            <option selected disabled value="">Выберите роль</option>
+            <% if (!locals.data) locals.data = {} %>
+            <% if (!locals.data.roles) locals.data.roles = [] %>
+            <% for(let role of data.roles) {
+                if(role.admin) continue;
+            %>
+                <option value="<%=role._id%>"><%=role.name%></option>
+            <% } %>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">
+        <%=edit ? "Обновить" : "Добавить"%>
+    </button>
+</form>

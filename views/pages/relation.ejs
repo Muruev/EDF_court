@@ -1,0 +1,359 @@
+<%- include('../layout/header') %>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.21.1/cytoscape.min.js" integrity="sha512-H44mkyNG9R5Y8NDjFoZ0lnMGgxfsbfbuewUNJJjecVOUzR3n/JL8+UFc07pP74T5tA+aGOMKCwazdDYwoquE8g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.10/lodash.js"></script>
+<script src="javascripts/cytoscape-edgehandles.js"></script>
+<script src="https://unpkg.com/@popperjs/core@2.11.5/dist/umd/popper.min.js"></script>
+<script src="https://unpkg.com/cytoscape-popper@2.0.0/cytoscape-popper.js"></script>
+<div class="position-absolute d-inline-block " style="padding: 10px; z-index: 30; right: 0;">
+    <form id="save_graph">
+        <select id="selected_court" class="form-select" name='court' style="height: 40px; width: 300px;" required>
+            <option selected disabled value="">Выберите суд</option>
+            <% if (!locals.data) locals.data = {} %>
+            <% if (!locals.data.courts) locals.data.courts = [] %>
+            <% for(let court of data.courts) { %>
+            <option value="<%=court._id%>"><%=court.name%></option>
+            <% } %>
+        </select>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <button id="clear_graph" class="btn btn-danger">Очистить</button>
+    </form>
+</div>
+<div class="position-absolute d-inline-block " style="padding: 10px; z-index: 30;">
+    <form id="add_node">
+        <select id="selected_court" class="form-select" name='court' style="height: 40px; width: 300px;" required>
+            <option selected disabled value="">Выберите роль</option>
+            <% if (!locals.data) locals.data = {} %>
+            <% if (!locals.data.roles) locals.data.roles = [] %>
+            <% for(let role of data.roles) { %>
+            <option value="<%=role._id%>"><%=role.name%></option>
+            <% } %>
+        </select>
+        <button type="submit" class="btn btn-primary">Добавить</button>
+    </form>
+</div>
+
+<div id="relation"></div>
+
+<script>
+    $(document).ready(function() {
+
+        function createGraph(id = undefined) {
+            <% if (!locals.data) locals.data = {} %>
+            <% if (!locals.data.roles) locals.data.roles = [] %> // Если нет пользователей установим пустой
+            <% if (!locals.data.courts) locals.data.courts = [] %> // Если нет пользователей установим пустой
+            let roles = [<%-JSON.stringify(data.roles)%>][0] // десериализация данных
+            let courts = [<%-JSON.stringify(data.courts)%>][0] // десериализация данных
+
+            let nodes = []
+            let edges = []
+
+            if(id !== undefined) {
+                let court = courts.filter(c => c._id === id)[0]
+                for(let relation of court.relations) {
+                    nodes.push({
+                        data: {
+                            id: relation.root._id,
+                            label: relation.root.name,
+                            width: relation.root.name.length * 12,
+                        },
+                        position: relation.position
+                    });
+                    for(let edge of relation.connected) {
+                        edges.push({
+                            data: {
+                                source: relation.root._id,
+                                target: edge._id,
+                            },
+                        });
+                    }
+                }
+            }
+            else {
+                for(let role of roles) {
+                    if(role.admin) continue;
+                    nodes.push({
+                        data: {
+                            id: role._id,
+                            label: role.name,
+                            width: role.name.length * 12
+                        }
+                    });
+                }
+            }
+
+            let cy = cytoscape({
+                container: document.getElementById('relation'),
+                boxSelectionEnabled: false,
+                layout: {
+                    name: 'preset'
+                },
+                style: [
+                    {
+                        selector: 'node',
+                        css: {
+                            'shape': 'square',
+                            'content': 'data(label)',
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'height': '30px',
+                            'width': 'data(width)',
+                            'background-color': '#fff',
+                        },
+                    },
+                    {
+                        selector: ':selected',
+                        css: {
+                            'background-color': '#FF6766',
+                            'line-color': 'black',
+                            'target-arrow-color': 'black',
+                            'source-arrow-color': 'black'
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'curve-style': 'taxi',
+                            'target-arrow-shape': 'triangle'
+                        }
+                    },
+                    {
+                        selector: '.eh-handle',
+                        style: {
+                            'background-color': 'red',
+                            'width': 6,
+                            'height': 6,
+                            'shape': 'ellipse',
+                            'overlay-opacity': 0,
+                            'border-width': 12, // makes the handle easier to hit
+                            'border-opacity': 0
+                        }
+                    },
+                    {
+                        selector: '.eh-hover',
+                        style: {
+                            'background-color': 'red'
+                        }
+                    },
+                    {
+                        selector: '.eh-source',
+                        style: {
+                            'border-width': 2,
+                            'border-color': 'red'
+                        }
+                    },
+                    {
+                        selector: '.eh-target',
+                        style: {
+                            'border-width': 2,
+                            'border-color': 'red'
+                        }
+                    },
+                    {
+                        selector: '.eh-preview, .eh-ghost-edge',
+                        style: {
+                            'background-color': 'red',
+                            'line-color': 'red',
+                            'target-arrow-color': 'red',
+                            'source-arrow-color': 'red'
+                        }
+                    },
+                    {
+                        selector: '.eh-ghost-edge.eh-preview-active',
+                        style: {
+                            'opacity': 0
+                        }
+                    }
+                ],
+                elements: {
+                    nodes: nodes,
+                    edges: edges
+                }
+            });
+
+            if(id === undefined) {
+                let layout = cy.layout({
+                    name: 'grid',
+                    rows: 8,
+                    padding: 100,
+                    avoidOverlap: true,
+                    avoidOverlapPadding: 0,
+                })
+
+                layout.run()
+            }
+
+
+            let eh = cy.edgehandles();
+
+            let popperNode;
+            let popper;
+            let popperDiv;
+            let started = false;
+
+            function start() {
+                eh.start(popperNode);
+            }
+
+            function stop() {
+                eh.stop();
+            }
+
+            function setHandleOn(node) {
+                if (started) { return; }
+
+                removeHandle(); // rm old handle
+
+                popperNode = node;
+
+                popperDiv = document.createElement('div');
+                popperDiv.classList.add('popper-handle');
+                popperDiv.addEventListener('mousedown', start);
+                document.body.appendChild(popperDiv);
+
+                popper = node.popper({
+                    content: popperDiv,
+                    popper: {
+                        placement: 'top',
+                        modifiers: [
+                            {
+                                name: 'offset',
+                                options: {
+                                    offset: [0, -10],
+                                },
+                            },
+                        ]
+                    }
+                });
+            }
+
+            function removeHandle() {
+                if (popper){
+                    popper.destroy();
+                    popper = null;
+                }
+
+                if (popperDiv) {
+                    document.body.removeChild(popperDiv);
+                    popperDiv = null;
+                }
+
+                popperNode = null;
+            }
+
+            cy.on('mouseover', 'node', function(e) {
+                setHandleOn(e.target);
+            });
+
+            cy.on('grab', 'node', function(){
+                removeHandle();
+            });
+
+            cy.on('tap', function(e){
+                if (e.target === cy) {
+                    removeHandle();
+                }
+            });
+
+            cy.on('zoom pan', function(){
+                removeHandle();
+            });
+
+            window.addEventListener('mouseup', function(e){
+                stop();
+            });
+
+            cy.ready(function() {
+                cy.unbind('click')
+                cy.bind('click', 'node', function(event) {
+                    window.localStorage.setItem('node', event.target.data().id);
+                })
+                cy.bind('click', 'edge', function(event) {
+                    window.localStorage.setItem('edge', event.target.data().id);
+                })
+            })
+
+            return cy
+        }
+
+        let cy = createGraph();
+
+        $('#add_node').submit(function (e) {
+            let selected = $('#add_node :selected');
+            e.preventDefault()
+
+            cy.add([
+                {
+                    group: 'nodes',
+                    data: {
+                        id: selected.val(),
+                        label: selected.text(),
+                        width: selected.text().length * 12,
+                    },
+                    position: { x: 650, y: 250 }
+                }
+            ])
+
+            cy.layout().run()
+        })
+
+        $('#clear_graph').click(function (e) {
+            cy = createGraph()
+            $('div.popper-handle').remove()
+        })
+
+        $('#selected_court').change(function (e) {
+            cy = createGraph($(this).val())
+            $('div.popper-handle').remove()
+        })
+
+        $('#save_graph').submit(function (e) {
+            e.preventDefault();
+
+            let data = {relations: []}
+            for(let node of cy.nodes()) {
+                data.relations.push({
+                    root: node.id(),
+                    position: node.position(),
+                    connected: node.outgoers().nodes().map(n => n.id())
+                })
+            }
+
+            $.ajax({
+                type: "POST", // Тип запроса
+                url: '/relation?court=' + $('#selected_court').val(), // Адрес
+                data: {'data': JSON.stringify(data)}, // сериализация формы.
+                timeout: 5000,
+                error: function(jqXHR, textStatus, errorThrown) {
+                    return false;
+                },
+                success: function (data) {
+                    location.reload();
+                    return true;
+                },
+            });
+
+        })
+
+        $(document).keydown(function(e) {
+            if(e.which === 46) { // delete button
+                let selected_nodes = cy.nodes(':selected');
+                let selected_edges = cy.edges(':selected');
+                if(selected_nodes.length !== 0) {
+                    let selected = selected_nodes[0];
+                    selected.children().move({
+                        parent : (selected.parent().id() ? selected.parent().id() : null)});
+                    selected.remove();
+                }
+                else if(selected_edges.length !== 0) {
+                    let selected = selected_edges[0];
+                    selected.children().move({
+                        parent : (selected.parent().id() ? selected.parent().id() : null)});
+                    selected.remove()
+                }
+
+            }
+        });
+    });
+</script>
+<%- include('../layout/footer') %>

@@ -1,0 +1,190 @@
+		<script type="text/javascript">
+			$(document).ready(function() {
+				$('#sign_in').submit(function (e) {
+					e.preventDefault();
+					let form = $(this);
+					let url = form.attr('action');
+
+					$.ajax({
+						type: "POST", // Тип запроса
+						url: url, // Адрес
+						data: form.serialize(), // сериализация формы.
+						timeout: 5000,
+						error: function(jqXHR, textStatus, errorThrown) {
+							return false;
+						},
+						success: function (data) {
+							location.reload(); // Обновляем страницу
+							return true;
+						},
+					});
+				})
+				$('#logout').click(function (e) {
+					e.preventDefault();
+
+					$.ajax({
+						type: "GET", // Тип запроса
+						url: '/users/logout', // Адрес
+						timeout: 5000,
+						error: function(jqXHR, textStatus, errorThrown) {
+							return false;
+						},
+						success: function (data) {
+							location.reload(); // Обновляем страницу
+							return true;
+						},
+					});
+				})
+				// Create Role
+				$('#add_role').submit(function (e) {
+					e.preventDefault();
+					let form = $(this);
+					let url = form.attr('action');
+
+					$.ajax({
+						type: "POST", // Тип запроса
+						url: url, // Адрес
+						data: form.serialize(), // сериализация формы.
+						timeout: 5000,
+						error: function(jqXHR, textStatus, errorThrown) {
+							return false;
+						},
+						success: function (data) {
+							location.reload(); // Обновляем страницу
+							return true;
+						},
+					});
+				})
+
+				// Create Role
+				$('#delete_role').submit(function (e) {
+					e.preventDefault();
+					let form = $(this);
+					let url = form.attr('action');
+
+					$.ajax({
+						type: "POST", // Тип запроса
+						url: url, // Адрес
+						data: form.serialize(), // сериализация формы.
+						timeout: 5000,
+						error: function(jqXHR, textStatus, errorThrown) {
+							return false;
+						},
+						success: function (data) {
+							location.reload(); // Обновляем страницу
+							return true;
+						},
+					});
+				})
+
+				// Create court
+				$('#add_court').submit(function (e) {
+					e.preventDefault();
+					let form = $(this);
+					let url = form.attr('action');
+
+					$.ajax({
+						type: "POST", // Тип запроса
+						url: url, // Адрес
+						data: form.serialize(), // сериализация формы.
+						timeout: 5000,
+						error: function(jqXHR, textStatus, errorThrown) {
+							return false;
+						},
+						success: function (data) {
+							location.reload(); // Обновляем страницу
+							return true;
+						},
+					});
+				})
+
+				$('#delete_court').submit(function (e) {
+					e.preventDefault();
+					let form = $(this);
+					let url = form.attr('action');
+
+					$.ajax({
+						type: "POST", // Тип запроса
+						url: url, // Адрес
+						data: form.serialize(), // сериализация формы.
+						timeout: 5000,
+						error: function(jqXHR, textStatus, errorThrown) {
+							return false;
+						},
+						success: function (data) {
+							location.reload(); // Обновляем страницу
+							return true;
+						},
+					});
+				})
+
+				$('#user_action').submit(function (e) {
+					e.preventDefault();
+					let form = $(this);
+					let url = form.attr('action');
+
+					$.ajax({
+						type: "POST", // Тип запроса
+						url: url, // Адрес
+						data: form.serialize(), // сериализация формы.
+						timeout: 5000,
+						error: function(jqXHR, textStatus, errorThrown) {
+							return false;
+						},
+						success: function (data) {
+							location.reload(); // Обновляем страницу
+							return true;
+						},
+					});
+				})
+
+				$('.hidden').click(function (e) {
+					let input = $(this).prev()
+					input.attr('type') === 'password' ?
+							input.attr('type', 'text') :
+							input.attr('type', 'password');
+				})
+
+				/* События всплыва окна модели models/detail_edit.js */
+				$('#edit_user_model').on('shown.bs.modal', function (event) {
+					<% if (!locals.data) locals.data = {} %>
+					<% if (!locals.data.users) locals.data.users = [] %> // Если нет пользователей установим пустой
+					let users = [<%-JSON.stringify(data.users)%>][0] // десериализация данных
+
+					let user = users.filter(function (user) {
+						return event.relatedTarget.id === user._id
+					}) // Находим нужный нам пользователь
+
+					if(user.length === 0) return true; // Если не существует прерываем функцию
+
+					$('#edit_user_model input[name="_id"]')
+							.attr('value', user[0]._id)
+
+					$('#edit_user_model input[name="name"]')
+							.attr('placeholder', user[0].name)
+							.attr('value', user[0].name)
+
+					$('#edit_user_model input[name="username"]')
+							.attr('placeholder', user[0].username)
+							.attr('value', user[0].username)
+
+					$('#edit_user_model input[name="password"]')
+							.attr('placeholder', user[0].username)
+							.attr('value', user[0].username)
+
+					let court = user[0].court._id
+					$("#edit_user_model select[name='court'] option[value=" + court + "]")
+							.attr('selected', 'true')
+
+					let role = user[0].role._id
+					$("#edit_user_model select[name='role'] option[value=" + role + "]")
+							.attr('selected', 'true')
+
+					$('#edit_user').modal('show')
+				})
+
+			});
+		</script>
+		<%- include('../models/edit_user.ejs') %>
+	</body>
+</html>

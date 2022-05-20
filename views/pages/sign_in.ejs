@@ -1,0 +1,24 @@
+<%- include('../layout/header') %>
+<div class="container-fluid register-page">
+    <form method="post" id ="sign_in" action="/users" class="register-form">
+        <div class="row">
+            <div class="col-md-4 col-sm-4 col-lg-4">
+                <label for="firstName">Пользователь</label>
+                <input name="username" class="form-control" type="text">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 col-sm-4 col-lg-4">
+                <label for="password">Пароль</label>
+                <input name="password" class="form-control" type="password">
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col">
+                <button type="submit" class="btn btn-default logbutton">Войти</button>
+            </div>
+        </div>
+    </form>
+</div>
+<%- include('../layout/footer') %>

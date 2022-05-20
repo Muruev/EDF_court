@@ -1,0 +1,36 @@
+<table id='users' class = 'table table-striped tableFixHead text-center'>
+    <thead class ='thead-dark'>
+    <tr>
+        <th width="5%" scope="col">No.</th>
+        <th width="25%" scope="col">Ф.И.О</th>
+        <th width="15%" scope="col">Логин</th>
+        <th width="15%" scope="col">Пароль</th>
+        <th width="15%" scope="col">Суд</th>
+        <th width="15%" scope="col">Роль</th>
+        <th width="15%" scope="col"></th>
+    </tr>
+    </thead>
+    <tbody>
+        <% for(let i = 0; i < data.users.length; i++) { %>
+            <tr>
+                <td><%=i+1%></td>
+                <td><%=data.users[i].name%></td>
+                <td><%=data.users[i].username%></td>
+                <td style="position:relative;">
+                    <input disabled type = 'password' class = "hidden text-center"
+                           value="<%=data.users[i].password%>"/>
+                    <div class = 'hidden' style="position:absolute;
+                     left:0; right:0; top:0; bottom:0; cursor: pointer;" ></div>
+                </td>
+                <td><%=data.users[i].court.name%></td>
+                <td><%=data.users[i].role.name%></td>
+                <td>
+                    <button type="button" data-toggle="modal" data-target="#edit_user_model"
+                            class="btn btn-primary" id="<%=data.users[i]._id%>">
+                        <i class="fa fa-list" aria-hidden="true"></i>
+                    </button>
+                </td>
+            </tr>
+        <%}%>
+    </tbody>
+</table>

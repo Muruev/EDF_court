@@ -1,0 +1,152 @@
+<%- include('../layout/header') %>
+<script type="text/javascript" src="/javascripts/jquery.tmpl.js"></script>
+<div class="container p-3">
+    <div class="messaging">
+        <div class="inbox_msg">
+            <div class="inbox_people">
+                <div class="headind_srch">
+                    <div class="recent_heading">
+                        <h4>Пользователи</h4>
+                    </div>
+                </div>
+                <div class="inbox_chat">
+                    <% for(let recipient of data.valid_recipients) { %>
+                        <%- include('../objects/recipient', {recipient: recipient}) %>
+                    <% } %>
+                </div>
+            </div>
+            <div class="mesgs">
+                <div class="msg_history"></div>
+                <div class="type_msg">
+                    <div class="input_msg_write">
+                        <input id='text_message' type="text" class="write_msg" placeholder="Написать сообщение" />
+                        <button id='send_message' class="msg_send_btn" type="button"><i class="fa fa-arrow-right" aria-hidden="true"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <p class="text-center top_spac"> Design by <a target="_blank" href="https://www.linkedin.com/in/sunil-rajput-nattho-singh/">Sunil Rajput</a></p>
+
+    </div>
+</div>
+
+<script id = 'incoming_msgTmpl' type="text/x-jquery-tmpl">
+<div class="incoming_msg p-2">
+    <div class="incoming_msg_img"> <img src="https://ptetutorials.com/images/user-profile.png" alt="sunil"></div>
+    <div class="received_msg">
+        <div class="received_withd_msg">
+            <p>${text}</p>
+            <span class="time_date">${date}</span>
+        </div>
+    </div>
+</div>
+</script>
+<script id = 'outgoing_msgTmpl' type="text/x-jquery-tmpl">
+<div class="outgoing_msg p-2">
+    <div class="sent_msg">
+        <p>${text}</p>
+        <span class="time_date">${date}</span>
+    </div>
+</div>
+</script>
+
+<script>
+    $(document).ready(function() {
+
+        function formatAMPM(d) {
+            let date = new Date(d)
+            let hours = date.getHours();
+            let minutes = date.getMinutes();
+            let ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            minutes = minutes < 10 ? '0'+ minutes : minutes;
+            return hours + ':' + minutes + ' ' + ampm;
+        }
+
+        $('.chat_list').click(function (e) {
+            for(let r of $('.chat_list')) $(r).removeClass('active_chat')
+            $(this).addClass('active_chat')
+            updateMessages()
+        })
+
+        $('#send_message').click(function (e) {
+            let val = $('#text_message').val()
+            if(val === '') return false;
+
+            let msg = {
+                recipient: $('.active_chat').attr('id'),
+                sender: '<%=user._id%>',
+                date: formatAMPM(new Date()) + "      |        " +
+                    new Date(new Date()).toLocaleDateString(),
+                text: val
+            }
+
+            $.ajax({
+                type: "POST", // Тип запроса
+                url: '/messages', // Адрес
+                data: {'data': JSON.stringify(msg)}, // сериализация формы.
+                timeout: 5000,
+                error: function(jqXHR, textStatus, errorThrown) {
+                    return false;
+                },
+                success: function (data) {
+                    $('#text_message').val('')
+                    $('#outgoing_msgTmpl').tmpl(msg).appendTo('.msg_history');
+                    let len = parseInt(window.localStorage.getItem('messages'))
+                    window.localStorage.setItem('messages', len + 1)
+                    return true;
+                },
+            });
+        })
+
+        function updateMessages() {
+            $.ajax({
+                type: "GET", // Тип запроса
+                url: '/messages/get?id=' + $('.active_chat').attr('id') , // Адрес
+                timeout: 5000,
+                error: function(jqXHR, textStatus, errorThrown) {
+                    return false;
+                },
+                success: function (data) {
+                    if(data.length !== parseInt(window.localStorage.getItem('messages'))) {
+                        <% if (!locals.data) locals.data = {} %>
+                        <% if (!locals.data.valid_recipients) locals.data.valid_recipients = [] %> // Если нет пользователей установим пустой
+                        let recipients = [<%-JSON.stringify(data.valid_recipients)%>][0] // десериализация данных
+                        for(let recipient of recipients) {
+                            let messages = data.filter(d => (d.sender._id === recipient._id)
+                                | d.recipient._id === recipient._id)
+                            if(messages.length === 0) continue;
+                            let last = messages[messages.length - 1]
+                            $('#' + recipient._id + ' p').text(last.text)
+                            $('#' + recipient._id + ' span').text(new Date(last.created_at)
+                                .toLocaleDateString())
+                        }
+
+                        $('.msg_history').empty()
+                        for(let m of data) {
+                            m['date'] = formatAMPM(m['created_at']) + "      |        "
+                            m['date'] += new Date(m['created_at']).toLocaleDateString()
+                            if(m.sender._id === '<%=user._id%>') {
+                                $('#outgoing_msgTmpl').tmpl(m).appendTo('.msg_history');
+                            }
+                            else {
+                                $('#incoming_msgTmpl').tmpl(m).appendTo('.msg_history');
+                            }
+                        }
+                        window.localStorage.setItem('messages', data.length)
+                    }
+                    $("#msg_history").animate({ scrollTop: $('#msg_history').prop("scrollHeight")}, 200);
+                    return true;
+                },
+            });
+        }
+
+        window.localStorage.setItem('messages', 0)
+        updateMessages()
+        setInterval(() => updateMessages(), 5000);
+    })
+</script>
+<%- include('../layout/footer') %>

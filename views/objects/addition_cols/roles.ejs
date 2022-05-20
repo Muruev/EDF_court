@@ -1,0 +1,22 @@
+<form method="post" id ="add_role" action="/roles/create" class="pt-2">
+    <div class="form-group">
+        <input class="form-control" name='name' placeholder="Наименование">
+    </div>
+    <button type="submit" class="btn btn-primary">Добавить</button>
+</form>
+<hr>
+<form method="post" id ="delete_role" action="/roles/delete" class="pt-2">
+    <div class="form-group">
+        <select class="form-select" name='role' id = 'role-list' required>
+            <option selected disabled value="">Выберите роль</option>
+            <% if (!locals.data) locals.data = {} %>
+            <% if (!locals.data.roles) locals.data.roles = [] %>
+            <% for(let role of data.roles) {
+                if(role.admin) continue;
+            %>
+            <option value="<%=role._id%>"><%=role.name%></option>
+            <% } %>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-danger">Удалить</button>
+</form>

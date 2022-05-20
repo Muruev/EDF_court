@@ -1,0 +1,56 @@
+<%- include('../layout/header') %>
+<script src="https://cdn.jsdelivr.net/gh/kartik-v/bootstrap-fileinput@5.2.5/js/fileinput.min.js"></script>
+<link href="https://cdn.jsdelivr.net/gh/kartik-v/bootstrap-fileinput@5.2.5/css/fileinput.min.css" media="all" rel="stylesheet" type="text/css" />
+<script src="https://cdn.jsdelivr.net/gh/kartik-v/bootstrap-fileinput@5.2.5/js/plugins/piexif.min.js" type="text/javascript"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.min.css" crossorigin="anonymous">
+<script src="/javascripts/locales/ru.js"></script>
+
+<div class="row m-0 mt-3">
+    <div class="col"></div>
+    <div class="col-5">
+        <form>
+            <input multiple id="file_upload" name="file" data-allowed-file-extensions=''
+                   type="file" data-browse-on-zone-click="true">
+            <div class="my-2">
+                <label for="recipient" class="form-label">Получатель</label>
+                <select class="form-select" id = 'recipient'>
+                    <option value="all" selected>Все</option>
+                    <% if (!locals.data) locals.data = {} %>
+                    <% if (!locals.data.valid_recipients) locals.data.valid_recipients = [] %>
+                    <% for(let r of data.valid_recipients) { %>
+                        <option value="<%=r._id%>"><%=r.name + " | " + r.role.name%></option>
+                    <% } %>
+                </select>
+            </div>
+            <div class="my-3">
+                <label for="comments" class="form-label">Комментарии</label>
+                <textarea class="form-control" id="comments" rows="3"></textarea>
+            </div>
+            <button id = 'send_file' class="mt-2 w-100 btn btn-success">Отправить</button>
+        </form>
+    </div>
+    <div class="col"></div>
+</div>
+<script>
+    $(document).ready(function() {
+
+        $('#file_upload').fileinput({
+            language: "ru",
+            uploadUrl: "/documents",
+            uploadAsync: true,
+            allowedFileExtensions: ["doc", "docx", "pdf"],
+            uploadExtraData: function () {
+                let data = { comment: $('#comments').val() }
+                let val = $('#recipient').val();
+                if(val !== 'all') data.recipient = val;
+                return data
+            }
+        });
+
+        $('#send_file').click(function (e) {
+            $('#file_upload').fileinput('upload');
+        })
+
+    });
+</script>
+<%- include('../layout/footer') %>

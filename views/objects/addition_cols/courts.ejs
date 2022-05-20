@@ -1,0 +1,21 @@
+<form method="post" id ="add_court" action="/courts/create" class="pt-2">
+    <div class="form-group">
+        <input class="form-control" name='name' placeholder="Наименование">
+    </div>
+    <button type="submit" class="btn btn-primary">Добавить</button>
+</form>
+<hr>
+<form method="post" id ="delete_court" action="/courts/delete" class="pt-2">
+    <div class="form-group">
+        <select class="form-select" name='court' id = 'court-list' required>
+            <option selected disabled value="">Выберите суд</option>
+            <% if (!locals.data) locals.data = {} %>
+            <% if (!locals.data.courts) locals.data.courts = [] %>
+            <% for(let court of data.courts) { %>
+            <option value="<%=court._id%>"><%=court.name%></option>
+            <% } %>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-danger">Удалить</button>
+</form>
+
