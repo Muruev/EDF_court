@@ -25,9 +25,7 @@
             <option selected disabled value="">Выберите роль</option>
             <% if (!locals.data) locals.data = {} %>
             <% if (!locals.data.roles) locals.data.roles = [] %>
-            <% for(let role of data.roles) {
-                if(role.admin) continue;
-            %>
+            <% for(let role of data.roles) { %>
                 <option value="<%=role._id%>"><%=role.name%></option>
             <% } %>
         </select>
