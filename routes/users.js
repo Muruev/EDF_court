@@ -15,10 +15,6 @@ router.post('/update', Users.updateUser, function(req, res, next) {
   res.redirect('/administration');
 });
 
-router.post('/delete', function(req, res, next) {
-  res.sendStatus(200);
-});
-
 router.get('/logout', Users.loadUser, function(req, res, next) {
   req.session.user = undefined;
   res.sendStatus(200);
