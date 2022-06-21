@@ -21,13 +21,29 @@ async function createDocument(req, res, next) {
     if(req.session.user === undefined) return res.sendStatus(401); // Если пользователь не вошел в систему
 
     let document = { // Формирование данных документа
+        number: req.body.number, // Наименование
         name: req.files[0].originalname, // Наименование
         path: req.files[0].path, // Путь в файлу
         comment: req.body.comment, // Комментарии
         sender: req.session.user._id, // Ссылка на пользователя
         court: req.session.user.court._id, // Ссылка на суд
-        recipients: ('recipient' in req.body) ? // Ссылка на получателей
-            req.body.recipient : (await getRecipients(req.session.user)).map(u => u._id)
+        recipients: []
+    }
+
+    if('recipient' in req.body) {
+        document.recipients.push({
+            recipient: req.body.recipient,
+            state: 'Начато',
+            seen: false
+        })
+    } else {
+        for(let id of (await getRecipients(req.session.user)).map(u => u._id)) {
+            document.recipients.push({
+                recipient: id,
+                state: 'Начато',
+                seen: false
+            })
+        }
     }
 
     await Document.create(document); // Создание документа
@@ -38,13 +54,16 @@ async function createDocument(req, res, next) {
 async function loadDocuments(req, res, next) {
     if(req.session.user === undefined) return next();  // Если пользователь не вошел в систему
     if(req.data === undefined) req.data = {}; // Если не создан объект данных для клиенту
-    req.data.documents = await Document.find({recipients: req.session.user._id}) // Получение всех документов
-        .populate({
-            path: 'sender',
-            populate: [{path: 'role'}]
-        }).populate({
-            path: 'recipients'
-        })
+    req.data.documents = await Document.find({
+        $or: [
+            {"recipients.recipient": req.session.user._id},
+            {sender: req.session.user._id }
+        ]
+    }).populate({
+        path: 'sender',
+        populate: [{path: 'role'}]
+    }).populate("recipients.recipient")
+
     next();
 }
 
@@ -57,9 +76,29 @@ async function validRecipients(req, res, next) {
     next();
 }
 
+/* Функция удаление документа */
+async function deleteDocument(req, res, next) {
+    if(req.session.user === undefined) return next();  // Если пользователь не вошел в систему
+    if(req.data === undefined) req.data = {}; // Если не создан объект данных для клиенту
+
+    await Document.findByIdAndDelete(req.params.id)
+    next();
+}
+
+/* Функция обновлении документа */
+async function updateDocument(req, res, next) {
+    if(req.session.user === undefined) return next();  // Если пользователь не вошел в систему
+    if(req.data === undefined) req.data = {}; // Если не создан объект данных для клиенту
+
+    await Document.findByIdAndUpdate(req.params.id, JSON.parse(req.body.data))
+    next();
+}
+
 /* Экспорт всех функции */
 module.exports = {
     createDocument: createDocument,
+    updateDocument: updateDocument,
+    deleteDocument: deleteDocument,
     loadDocuments: loadDocuments,
     validRecipients: validRecipients
 }

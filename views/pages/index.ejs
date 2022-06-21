@@ -1,10 +1,18 @@
 <%- include('../layout/header') %>
 
+<%
+function formatDate(date) {
+    let data = new Date(date)
+    return data.toLocaleDateString() + " " + data.toLocaleTimeString()
+}
+%>
+
 <table id='documents' class = 'table table-striped tableFixHead text-center'>
     <thead class ='thead-dark'>
     <tr>
+        <th width="5%" scope="col"></th>
         <th width="10%" scope="col">No.</th>
-        <th width="20%" scope="col">Дата документа</th>
+        <th width="20%" scope="col">Дата</th>
         <th width="20%" scope="col">Отправитель</th>
         <th width="20%" scope="col">Комментарии</th>
         <th width="20%" scope="col">Документ</th>
@@ -15,17 +23,23 @@
     <%for(let i = 0; i < documents.length; i++) {%>
     <tr>
         <%let idx = documents.length - i - 1%>
-        <td><%=i+1%></td>
-        <td><%=new Date(documents[idx].created_at).toLocaleDateString()%></td>
+        <td>
+            <% if(user._id.toString() !== documents[idx].sender._id.toString()) { %>
+                <i class="fas fa-arrow-down text-info"></i>
+            <% } else { %>
+                <i class="fas fa-arrow-up text-success"></i>
+            <% }  %>
+        </td>
+        <td><%=documents[idx].number%></td>
+        <td><%=formatDate(documents[idx].created_at)%></td>
         <td><%=documents[idx].sender.role.name + " " + documents[idx].sender.name%></td>
         <td><%=documents[idx].comment%></td>
         <td><%=documents[idx].name%></td>
         <td>
-            <form method="get" action="<%='\\' + documents[idx].path%>" >
-                <button class="btn" type="submit">
-                    <i class="text-primary fa fa-file" aria-hidden="true"></i>
-                </button>
-            </form>
+            <button type="button" data-toggle="modal" data-target="#edit_document_model"
+                    class="btn" id="<%=documents[idx]._id%>">
+                <i class="text-primary fa fa-file" aria-hidden="true"></i>
+            </button>
         </td>
     </tr>
     <%}%>

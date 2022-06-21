@@ -61,6 +61,14 @@ router.post('/documents', upload.any(), Documents.createDocument, function(req, 
   res.send({uploaded: 'OK'})
 });
 
+router.post('/documents/:id', Documents.updateDocument, function(req, res, next) {
+  res.sendStatus(200)
+});
+
+router.get('/documents/:id', Documents.deleteDocument, function(req, res, next) {
+  res.sendStatus(200)
+});
+
 /* Раздел чата */
 router.get('/messages', Documents.validRecipients, function(req, res, next) {
   if(req.session.user === undefined) return res.render('pages/sign_in')

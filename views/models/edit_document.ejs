@@ -1,0 +1,170 @@
+<div class="modal" id="edit_document_model" tabindex="-1" role="dialog" >
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="exampleModalLabel">Информация о документе</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div id="document_info" class="p-3"> </div>
+		</div>
+	</div>
+</div>
+
+<script id = 'rdocumentTmpl' type="text/x-jquery-tmpl">
+<div class="p-2">
+    <h4>№ ${number} от ${created_at}</h4>
+	<div><b>Отправитель:</b> ${sender.role.name} ${sender.name}</div>
+	<div>
+		<b>Статус:</b>
+		<select name = 'state' class="form-select">
+		  <option value="Начато" selected>Начато</option>
+		  <option value="В работе">В работе</option>
+		  <option value="Завершено">Завершено</option>
+		</select>
+	</div>
+	<div><b>Комментарии:</b> ${comment}</div>
+	<div class="mt-4 d-flex justify-content-between">
+		<form id = "download_document" method="get">
+			<button type="submit" class="btn btn-primary">Скачать документ</button>
+		</form>
+		<div>
+			<button id="update_document" class="btn btn-success">Сохранить</button>
+		</div>
+	</div>
+</div>
+</script>
+
+<script id = 'sdocumentTmpl' type="text/x-jquery-tmpl">
+<div class="p-2">
+    <h4>№ ${number} от ${created_at}</h4>
+	<div><b>Отправитель:</b> ${sender.role.name} ${sender.name}</div>
+	<div><b>Комментарии:</b> ${comment}</div>
+	<div>
+		<b>Получатели:</b>
+		{{each recipients}}
+			<br/>
+			${recipient.name} | ${state} |
+			{{if seen == true}}
+				Просмотрено
+			{{else}}
+				Не просмотрено
+			{{/if}}
+		{{/each}}
+	</div>
+	<div class="mt-4 d-flex justify-content-between">
+		<form id = "download_document" method="get">
+			<button type="submit" class="btn btn-primary">Скачать документ</button>
+		</form>
+		<div>
+			<button id="delete_document" class="btn btn-danger">Удалить</button>
+		</div>
+	</div>
+</div>
+</script>
+
+<script>
+	$(document).ready(function() {
+		/* События всплыва окна модели models/detail_edit.js */
+		$('#edit_document_model').on('shown.bs.modal', function (e) {
+			<% if (!locals.documents) locals.documents = [] %> // Если нет пользователей установим пустой
+			<% if (!locals.user) locals.user = {} %> // Если нет пользователей установим пустой
+
+			let documents = [<%-JSON.stringify(documents)%>][0] // десериализация данных
+			let user = [<%-JSON.stringify(user)%>][0] // десериализация данных
+
+			documents = documents.filter(d => d._id.toString() === e.relatedTarget.id.toString())
+			if(documents.length === 0) return true;
+			$('#document_info').empty()
+			let document = documents[0];
+
+			let url = '/' + document.path
+			$('#download_document').attr('action', url)
+
+			let date = new Date(document.created_at)
+			document.created_at = date.toLocaleDateString() + " " + date.toLocaleTimeString()
+
+			if(document.sender._id.toString() !== user._id.toString()) {
+				document.recipients.filter(r => r._id.toString() === user._id.toString())
+				$('#rdocumentTmpl').tmpl(document).appendTo('#document_info')
+				$('select[name="state"] option:contains("' + document.recipients[0].state + '")')
+						.attr('selected', 'selected')
+
+				let recipient = document.recipients.filter(r => r.recipient._id.toString() === user._id.toString())
+				document.recipients = document.recipients.filter(r => r.recipient._id.toString() !== user._id.toString())
+				recipient[0].seen = true
+				document.recipients.push(recipient[0])
+
+				$.ajax({
+					type: "POST", // Тип запроса
+					url: '/documents/' + document._id.toString(), // Адрес
+					data: {data: JSON.stringify(document)}, // сериализация формы.
+					timeout: 5000,
+					error: function(jqXHR, textStatus, errorThrown) {
+						return false;
+					},
+					success: function (data) {
+						return true;
+					},
+				});
+
+			} else {
+				$('#sdocumentTmpl').tmpl(document).appendTo('#document_info')
+			}
+
+			window.localStorage.setItem('document', e.relatedTarget.id.toString())
+
+			$('#delete_document').click(function (e) {
+				let url = '/documents/' + window.localStorage.getItem('document') + '?action=delete'
+
+				$.ajax({
+					type: "GET", // Тип запроса
+					url: url, // Адрес
+					timeout: 5000,
+					error: function(jqXHR, textStatus, errorThrown) {
+						return false;
+					},
+					success: function (data) {
+						location.reload(); // Обновляем страницу
+						return true;
+					},
+				});
+
+			})
+
+		})
+
+		$('#update_document').click(function (e) {
+			let documents = [<%-JSON.stringify(documents)%>][0] // десериализация данных
+			<% if (!locals.user) locals.user = {} %> // Если нет пользователей установим пустой
+			let user = [<%-JSON.stringify(user)%>][0] // десериализация данных
+
+			documents = documents.filter(d => d._id.toString() === window.localStorage.getItem('document'))
+			if(documents.length === 0) return true;
+			let document = documents[0];
+
+			let url = '/documents/' + document._id.toString();
+
+			let recipient = document.recipients.filter(r => r.recipient._id.toString() === user._id.toString())
+			document.recipients = document.recipients.filter(r => r.recipient._id.toString() !== user._id.toString())
+			recipient[0].state = $('select[name="state"] option:selected').val()
+			document.recipients.push(recipient[0])
+
+			$.ajax({
+				type: "POST", // Тип запроса
+				url: url, // Адрес
+				data: {data: JSON.stringify(document)}, // сериализация формы.
+				timeout: 5000,
+				error: function(jqXHR, textStatus, errorThrown) {
+					return false;
+				},
+				success: function (data) {
+					location.reload(); // Обновляем страницу
+					return true;
+				},
+			});
+
+		})
+	})
+</script>

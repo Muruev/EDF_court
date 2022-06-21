@@ -11,6 +11,10 @@
         <form>
             <input multiple id="file_upload" name="file" data-allowed-file-extensions=''
                    type="file" data-browse-on-zone-click="true">
+            <div class="form-group mt-2">
+                <label for="number" class="form-label">Номер</label>
+                <input id="number" class="form-control" name='number' required>
+            </div>
             <div class="my-2">
                 <label for="recipient" class="form-label">Получатель</label>
                 <select class="form-select" id = 'recipient'>
@@ -43,6 +47,7 @@
                 let data = { comment: $('#comments').val() }
                 let val = $('#recipient').val();
                 if(val !== 'all') data.recipient = val;
+                data.number = $('#number').val()
                 return data
             }
         });
